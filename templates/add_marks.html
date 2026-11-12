@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Marks Entry - PUMA University{% endblock %}
+{% block page_heading %}Student Marks & Evaluation Entry{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-4">
+        <!-- MARKS ENTRY FORM -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h6 class="fw-bold text-dark mb-0">Record Subject Marks</h6>
+                    <small class="text-muted">Enter marks obtained by student (Auto-updates if exists)</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="/marks/add" id="singleMarkForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Select Student</label>
+                            <select name="student_id" id="markStudentSelect" class="form-select" required>
+                                <option value="">Choose Student</option>
+                                {% for stu in students %}
+                                    <option value="{{ stu.id }}">{{ stu.name }} ({{ stu.enrollment }}) - {{ stu.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Select Subject</label>
+                            <select name="subject_id" id="markSubjectSelect" class="form-select" required>
+                                <option value="">Choose Subject</option>
+                                {% for sub in subjects %}
+                                    <option value="{{ sub.id }}" data-max="{{ sub.max_marks }}">
+                                        {{ sub.name }} [{{ sub.code or 'N/A' }}] (Max: {{ sub.max_marks }}, Credits: {{ sub.credits }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold small text-muted mb-0">Marks Obtained</label>
+                                <small class="text-muted" id="maxMarksNote">Max Marks: 100</small>
+                            </div>
+                            <input type="number" name="marks" id="marksInput" class="form-control form-control-lg fs-5 fw-bold" placeholder="0" min="0" max="100" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-puma-primary w-100 py-2 fs-6">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Save Subject Marks
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- GRADE SCORING CRITERIA INFO CARD -->
+            <div class="card border-0 shadow-sm rounded-4 bg-light">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-dark mb-2">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i> 10-Point UGC Grading Scale
+                    </h6>
+                    <div class="row g-2 small text-muted">
+                        <div class="col-6"><span class="badge bg-success">O</span> 90-100% (GP: 10)</div>
+                        <div class="col-6"><span class="badge bg-primary">A+</span> 80-89% (GP: 9)</div>
+                        <div class="col-6"><span class="badge bg-info text-white">A</span> 70-79% (GP: 8)</div>
+                        <div class="col-6"><span class="badge bg-warning text-dark">B+</span> 60-69% (GP: 7)</div>
+                        <div class="col-6"><span class="badge bg-secondary">B</span> 50-59% (GP: 6)</div>
+                        <div class="col-6"><span class="badge bg-dark">C</span> 40-49% (Pass, GP: 5)</div>
+                        <div class="col-12"><span class="badge bg-danger">F</span> Less than 40% (Fail/Backlog, GP: 0)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECENT MARKS LEDGER -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Recorded Marks Entries ({{ marks_list|length }})</h6>
+                        <small class="text-muted">Live subject-wise marks evaluation registry</small>
+                    </div>
+                    <input type="text" class="form-control form-control-sm" placeholder="Filter marks..." data-table-search="marksTable" style="max-width: 200px;">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-modern" id="marksTable">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Subject</th>
+                                <th class="text-center">Marks</th>
+                                <th class="text-center">Grade</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in marks_list %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ m.student_name }}</div>
+                                    <small class="text-muted font-monospace">{{ m.enrollment }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ m.subject_name }}</div>
+                                    <small class="text-muted font-monospace">{{ m.subject_code or 'N/A' }} ({{ m.credits }} Credits)</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fs-6 fw-bold">{{ m.marks }}</span>
+                                    <small class="text-muted">/ {{ m.max_marks }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-grade-{{ m.grade|lower }} px-2 py-1 fs-6">
+                                        {{ m.grade }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if m.marks >= m.pass_marks %}
+                                        <span class="badge-status-pass">PASS</span>
+                                    {% else %}
+                                        <span class="badge-status-fail">FAIL</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="/marks/delete" class="d-inline">
+                                        <input type="hidden" name="student_id" value="{{ m.student_id }}">
+                                        <input type="hidden" name="subject_id" value="{{ m.subject_id }}">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="Marks for '{{ m.student_name }}' in '{{ m.subject_name }}'">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No marks recorded yet. Select a student and subject on the left to add marks.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const subSelect = document.getElementById('markSubjectSelect');
+    const marksInput = document.getElementById('marksInput');
+    const note = document.getElementById('maxMarksNote');
+
+    if (subSelect && marksInput && note) {
+        subSelect.addEventListener('change', () => {
+            const opt = subSelect.options[subSelect.selectedIndex];
+            const maxM = opt.getAttribute('data-max') || 100;
+            marksInput.max = maxM;
+            note.textContent = `Max Marks: ${maxM}`;
+        });
+    }
+</script>
+{% endblock %}
+

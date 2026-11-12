@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Students Roster - PUMA University{% endblock %}
+{% block page_heading %}Student Enrollment & Directory{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-4">
+        <!-- ADD STUDENT CARD -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h6 class="fw-bold text-dark mb-0">Enroll New Student</h6>
+                    <small class="text-muted">Register candidate into academic program</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="/students/add">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Enrollment / Roll Number</label>
+                            <input type="text" name="enrollment" class="form-control font-monospace text-uppercase" placeholder="e.g. 26PU001 or 25COA4MCA0187" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Full Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Degree / Course</label>
+                            <select name="course_id" id="studentCourseSelect" class="form-select" data-cascade-course="#studentSemSelect" required>
+                                <option value="">Select Course</option>
+                                {% for c in courses %}
+                                    <option value="{{ c.id }}">{{ c.name }} ({{ c.department_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Semester</label>
+                            <select name="semester_id" id="studentSemSelect" class="form-select" required>
+                                <option value="">Select Course First</option>
+                                {% for sem in semesters %}
+                                    <option value="{{ sem.id }}">{{ sem.course_name }} - {{ sem.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small text-muted">Email (Optional)</label>
+                                <input type="email" name="email" class="form-control" placeholder="name@puma.edu">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small text-muted">Phone (Optional)</label>
+                                <input type="text" name="phone" class="form-control" placeholder="+91 ...">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small text-muted">Initial Password</label>
+                            <input type="text" name="password" class="form-control font-monospace" value="student123" required>
+                            <small class="text-muted" style="font-size: 0.72rem;">Student can use this to login</small>
+                        </div>
+                        <button type="submit" class="btn btn-puma-primary w-100">
+                            <i class="fa-solid fa-user-plus me-1"></i> Register Student
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDENTS LIST -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Enrolled Students ({{ students|length }})</h6>
+                        <small class="text-muted">Manage student profiles, credentials and marksheet generation</small>
+                    </div>
+                    <input type="text" class="form-control form-control-sm" placeholder="Search by name or enrollment..." data-table-search="studentsTable" style="max-width: 240px;">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-modern" id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Enrollment</th>
+                                <th>Student Name</th>
+                                <th>Program & Semester</th>
+                                <th class="text-center">Subjects Graded</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stu in students %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ stu.enrollment }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ stu.name }}</div>
+                                    <small class="text-muted">{{ stu.email or 'No email' }}</small>
+                                </td>
+                                <td>
+                                    <div>{{ stu.course_name }}</div>
+                                    <small class="text-muted">{{ stu.semester_name }} ({{ stu.department_name }})</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 fw-bold">
+                                        {{ stu.subjects_graded }} Subjects
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/marksheet/preview/{{ stu.id }}" class="btn btn-outline-primary" title="Preview Marksheet">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </a>
+                                        <a href="/marksheet/{{ stu.id }}" class="btn btn-primary" title="Download Marksheet PDF">
+                                            <i class="fa-solid fa-file-pdf"></i>
+                                        </a>
+                                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editStuModal{{ stu.id }}" title="Edit Student">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <form method="POST" action="/students/delete/{{ stu.id }}" class="d-inline">
+                                            <button type="button" class="btn btn-outline-danger" data-confirm-delete="Student '{{ stu.name }}'" title="Delete Student">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- EDIT STUDENT MODAL -->
+                            <div class="modal fade" id="editStuModal{{ stu.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Edit Student Details</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="/students/edit/{{ stu.id }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Enrollment Number</label>
+                                                    <input type="text" name="enrollment" class="form-control font-monospace text-uppercase" value="{{ stu.enrollment }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Student Name</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ stu.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Course</label>
+                                                    <select name="course_id" class="form-select" required>
+                                                        {% for c in courses %}
+                                                            <option value="{{ c.id }}" {% if c.id == stu.course_id %}selected{% endif %}>{{ c.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Semester</label>
+                                                    <select name="semester_id" class="form-select" required>
+                                                        {% for sem in semesters %}
+                                                            <option value="{{ sem.id }}" {% if sem.id == stu.semester_id %}selected{% endif %}>{{ sem.course_name }} - {{ sem.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label fw-semibold small">Email</label>
+                                                        <input type="email" name="email" class="form-control" value="{{ stu.email or '' }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="form-label fw-semibold small">Phone</label>
+                                                        <input type="text" name="phone" class="form-control" value="{{ stu.phone or '' }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

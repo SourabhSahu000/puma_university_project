@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}My Academic Dashboard - PUMA University{% endblock %}
+{% block page_heading %}Student Academic Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- STUDENT PROFILE BANNER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color: white;">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="bg-white text-primary rounded-4 d-flex align-items-center justify-content-center shadow-lg" style="width: 80px; height: 80px; font-size: 2.2rem; font-weight: 800;">
+                        {{ student.name[0]|upper }}
+                    </div>
+                    <div>
+                        <div class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-2 font-monospace">
+                            ROLL NO: {{ student.enrollment }}
+                        </div>
+                        <h2 class="fw-bold mb-1 text-white">{{ student.name }}</h2>
+                        <div class="text-white-50">
+                            {{ student.course_name }} &bull; {{ student.semester_name }} &bull; {{ student.department_name }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/marksheet/preview/{{ student.id }}" class="btn btn-light rounded-3 px-3 fw-bold">
+                        <i class="fa-regular fa-eye me-1"></i> View Marksheet
+                    </a>
+                    <a href="/marksheet/{{ student.id }}" class="btn btn-warning rounded-3 px-3 fw-bold text-dark shadow-sm">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACADEMIC SCORE METRICS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Semester SGPA</div>
+                    <h3 class="fw-bold my-1 text-primary">{{ summary.sgpa }} <small class="text-muted fs-6">/ 10</small></h3>
+                    <div class="text-success small fw-medium">
+                        <i class="fa-solid fa-check me-1"></i> 10-Point Scale
+                    </div>
+                </div>
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Result Standing</div>
+                    <h4 class="fw-bold my-1 {% if summary.overall_status == 'PASS' %}text-success{% else %}text-danger{% endif %}">
+                        {{ summary.overall_status }}
+                    </h4>
+                    <div class="text-muted small">{{ summary.division }}</div>
+                </div>
+                <div class="stat-icon {% if summary.overall_status == 'PASS' %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}">
+                    <i class="fa-solid {% if summary.overall_status == 'PASS' %}fa-graduation-cap{% else %}fa-triangle-exclamation{% endif %}"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Total Marks Scored</div>
+                    <h3 class="fw-bold my-1 text-dark">{{ summary.total_marks_obtained|int }} <small class="text-muted fs-6">/ {{ summary.total_max_marks|int }}</small></h3>
+                    <div class="text-primary small fw-medium">{{ summary.percentage }}% Aggregate</div>
+                </div>
+                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Credits Earned</div>
+                    <h3 class="fw-bold my-1 text-dark">{{ summary.total_credits }}</h3>
+                    <div class="text-muted small">
+                        {{ summary.passed_subjects }} / {{ summary.total_subjects }} Subjects Cleared
+                    </div>
+                </div>
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERFORMANCE VISUALIZATION & BREAKDOWN -->
+    <div class="row g-4 mb-4">
+        <!-- SUBJECTS TABLE -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Semester Subject Evaluation & Credits</h6>
+                        <small class="text-muted">Subject-wise marks breakdown, grade letters, and credit points</small>
+                    </div>
+                    <span class="badge bg-light text-dark border">Semester {{ student.semester_name }}</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-modern">
+                        <thead>
+                            <tr>
+                                <th>Subject Title & Code</th>
+                                <th class="text-center">Credits</th>
+                                <th class="text-center">Max</th>
+                                <th class="text-center">Obtained</th>
+                                <th class="text-center">Grade</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in summary.subjects %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ sub.subject_name }}</div>
+                                    <small class="text-muted font-monospace">{{ sub.subject_code }}</small>
+                                </td>
+                                <td class="text-center fw-semibold">{{ sub.credits|int }}</td>
+                                <td class="text-center text-muted">{{ sub.max_marks }}</td>
+                                <td class="text-center">
+                                    <span class="fw-bold fs-6">{{ sub.marks_obtained|int }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-grade-{{ sub.grade|lower }} px-2 py-1">
+                                        {{ sub.grade }} (GP: {{ sub.grade_points }})
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if sub.status == 'PASS' %}
+                                        <span class="badge-status-pass">PASS</span>
+                                    {% else %}
+                                        <span class="badge-status-fail">BACKLOG</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No subject marks recorded for this semester yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUBJECT CHART -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h6 class="fw-bold text-dark mb-0">Subject Performance Chart</h6>
+                    <small class="text-muted">Marks scored vs Passing threshold (40)</small>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="studentSubChart" height="260"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const subLabels = [{% for s in summary.subjects %}"{{ s.subject_code or s.subject_name[:10] }}",{% endfor %}];
+    const subMarks = [{% for s in summary.subjects %}{{ s.marks_obtained|int }},{% endfor %}];
+    const passMarks = [{% for s in summary.subjects %}{{ s.pass_marks|int }},{% endfor %}];
+
+    const ctx = document.getElementById('studentSubChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: subLabels,
+            datasets: [
+                {
+                    label: 'Marks Obtained',
+                    data: subMarks,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Passing Threshold',
+                    data: passMarks,
+                    type: 'line',
+                    borderColor: '#dc2626',
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

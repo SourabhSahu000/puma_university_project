@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Statement of Marks - {{ student.name }} ({{ student.enrollment }}){% endblock %}
+{% block page_heading %}Official Academic Transcript Preview{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- ACTION HEADER BAR -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h5 class="fw-bold text-dark mb-0">Grade Sheet & Marksheet Preview</h5>
+            <small class="text-muted">Candidate: {{ student.name }} &bull; Roll: {{ student.enrollment }}</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-dark rounded-3">
+                <i class="fa-solid fa-print me-1"></i> Print Marksheet
+            </button>
+            <a href="/marksheet/{{ student.id }}" class="btn btn-puma-primary rounded-3">
+                <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+            </a>
+            <a href="/verify/{{ student.enrollment }}" target="_blank" class="btn btn-outline-info rounded-3">
+                <i class="fa-solid fa-qrcode me-1"></i> QR Verify URL
+            </a>
+        </div>
+    </div>
+
+    <!-- PRINTABLE MARKSHEET CONTAINER -->
+    <div class="card border-0 shadow-sm rounded-4 mx-auto printable-marksheet p-4 p-md-5" style="max-width: 900px; background: #ffffff;">
+
+        <!-- UNIVERSITY CREST & LETTERHEAD -->
+        <div class="text-center pb-3 border-bottom border-2 border-primary">
+            <img src="/static/logo.png" alt="PUMA University Crest" width="75" height="75" class="mb-2">
+            <h2 class="fw-bold mb-0 text-primary" style="letter-spacing: 0.05em;">PUMA UNIVERSITY</h2>
+            <div class="small text-muted fw-semibold">Accredited Grade 'A++' by NAAC | Approved by UGC & AICTE</div>
+            <div class="small text-muted">Knowledge Park, Academic City - 411045</div>
+            <div class="badge bg-danger text-white mt-2 px-3 py-1 fs-6 text-uppercase fw-bold">
+                Statement of Marks & Grades
+            </div>
+        </div>
+
+        <!-- CANDIDATE PARTICULARS TABLE -->
+        <div class="my-4 p-3 bg-light rounded-3 border">
+            <div class="row g-2 small">
+                <div class="col-sm-6">
+                    <span class="text-muted">Student Name:</span>
+                    <strong class="text-dark ms-1 text-uppercase">{{ student.name }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted">Enrollment / Roll No:</span>
+                    <strong class="text-dark ms-1 font-monospace">{{ student.enrollment }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted">Degree / Course:</span>
+                    <strong class="text-dark ms-1">{{ student.course_name }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted">Department:</span>
+                    <strong class="text-dark ms-1">{{ student.department_name }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted">Semester / Term:</span>
+                    <strong class="text-dark ms-1">{{ student.semester_name }}</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted">Academic Session:</span>
+                    <strong class="text-dark ms-1">2025 - 2026</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUBJECT MARKS TABLE -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm align-middle text-center mb-0" style="font-size: 0.88rem;">
+                <thead class="table-primary text-dark">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Subject Code</th>
+                        <th class="text-start">Subject Title</th>
+                        <th>Credits</th>
+                        <th>Max</th>
+                        <th>Min</th>
+                        <th>Marks</th>
+                        <th>Grade</th>
+                        <th>GP</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in summary.subjects %}
+                    <tr>
+                        <td class="text-muted">{{ loop.index }}</td>
+                        <td class="font-monospace fw-semibold">{{ sub.subject_code }}</td>
+                        <td class="text-start fw-bold">{{ sub.subject_name }}</td>
+                        <td>{{ sub.credits|int }}</td>
+                        <td>{{ sub.max_marks }}</td>
+                        <td>{{ sub.pass_marks }}</td>
+                        <td class="fw-bold">{{ sub.marks_obtained|int }}</td>
+                        <td><span class="badge badge-grade-{{ sub.grade|lower }}">{{ sub.grade }}</span></td>
+                        <td>{{ sub.grade_points }}</td>
+                        <td>
+                            {% if sub.status == 'PASS' %}
+                                <span class="text-success fw-bold">PASS</span>
+                            {% else %}
+                                <span class="text-danger fw-bold">FAIL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RESULT SUMMARY BOX -->
+        <div class="p-3 rounded-3 border bg-light mb-4">
+            <div class="row text-center g-2">
+                <div class="col-3 border-end">
+                    <div class="text-muted small">Total Marks</div>
+                    <div class="fw-bold fs-6">{{ summary.total_marks_obtained|int }} / {{ summary.total_max_marks|int }}</div>
+                </div>
+                <div class="col-3 border-end">
+                    <div class="text-muted small">Percentage</div>
+                    <div class="fw-bold fs-6">{{ summary.percentage }}%</div>
+                </div>
+                <div class="col-3 border-end">
+                    <div class="text-muted small">Semester SGPA</div>
+                    <div class="fw-bold fs-5 text-primary">{{ summary.sgpa }} / 10.0</div>
+                </div>
+                <div class="col-3">
+                    <div class="text-muted small">Final Standing</div>
+                    <div class="fw-bold fs-6 {% if summary.overall_status == 'PASS' %}text-success{% else %}text-danger{% endif %}">
+                        {{ summary.overall_status }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRADING SCALE LEGEND -->
+        <div class="text-center small text-muted mb-4 border-top pt-2" style="font-size: 0.72rem;">
+            <b>Grading Scale:</b> O (Outstanding, 90-100%, GP:10) | A+ (Excellent, 80-89%, GP:9) | A (Very Good, 70-79%, GP:8) | B+ (Good, 60-69%, GP:7) | B (Above Avg, 50-59%, GP:6) | C (Pass, 40-49%, GP:5) | F (Fail, &lt;40%, GP:0)
+        </div>
+
+        <!-- SIGNATURES & VERIFICATION SECTION -->
+        <div class="row align-items-end pt-3">
+            <div class="col-4 text-center">
+                <div class="border p-2 d-inline-block bg-white rounded shadow-sm">
+                    <img src="/api/qr/{{ student.enrollment }}" alt="QR Code" width="70" height="70">
+                </div>
+                <div class="text-muted mt-1" style="font-size: 0.68rem;">Scan to Verify Authenticity</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-stamp me-1"></i> VERIFIED TRANSCRIPT
+                </div>
+                <div class="text-muted small mt-1">Issue Date: Nov 12, 2026</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="text-muted mb-2">__________________________</div>
+                <div class="fw-bold small text-dark">Controller of Examinations</div>
+                <div class="text-muted" style="font-size: 0.7rem;">PUMA University Board</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+

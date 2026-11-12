@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Departments - PUMA University{% endblock %}
+{% block page_heading %}Department Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-4">
+        <!-- ADD DEPARTMENT CARD -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h6 class="fw-bold text-dark mb-0">Add New Department</h6>
+                    <small class="text-muted">Register a university academic department</small>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="/departments/add">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Department Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Computer Science & Engineering" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small text-muted">Department Code (Optional)</label>
+                            <input type="text" name="code" class="form-control text-uppercase" placeholder="e.g. CSE">
+                        </div>
+                        <button type="submit" class="btn btn-puma-primary w-100">
+                            <i class="fa-solid fa-plus me-1"></i> Add Department
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPARTMENTS LIST -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Existing Departments ({{ departments|length }})</h6>
+                        <small class="text-muted">All active university faculties</small>
+                    </div>
+                    <input type="text" class="form-control form-control-sm" placeholder="Filter departments..." data-table-search="deptTable" style="max-width: 220px;">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-modern" id="deptTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Department Name</th>
+                                <th>Code</th>
+                                <th class="text-center">Courses Offered</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in departments %}
+                            <tr>
+                                <td class="text-muted">{{ loop.index }}</td>
+                                <td class="fw-bold text-dark">{{ dept.name }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ dept.code or 'N/A' }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 fw-bold">
+                                        {{ dept.course_count }} Courses
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ dept.id }}">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <form method="POST" action="/departments/delete/{{ dept.id }}" class="d-inline">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="Department '{{ dept.name }}'">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <!-- EDIT MODAL -->
+                            <div class="modal fade" id="editDeptModal{{ dept.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Edit Department</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="/departments/edit/{{ dept.id }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Department Name</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ dept.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Department Code</label>
+                                                    <input type="text" name="code" class="form-control text-uppercase" value="{{ dept.code or '' }}">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
