@@ -99,7 +99,12 @@ def handle_login_request():
         if session.get("role") == "admin":
             return redirect(url_for("admin_dashboard"))
         elif session.get("role") == "student":
-            return redirect(url_for("student_dashboard"))
+            stu_id = session.get("user", {}).get("id")
+            if stu_id and database.get_student(stu_id):
+                return redirect(url_for("student_dashboard"))
+            else:
+                session.clear()
+                return render_template("login.html")
     return render_template("login.html")
 
 @app.route("/", methods=["GET", "POST"])
@@ -526,9 +531,9 @@ def export_results_csv():
     )
 
 # ----------------- STUDENT PORTAL -----------------
-@app.route("/student")
 @app.route("/student/dashboard")
 @app.route("/student/result")
+@app.route("/student")
 @student_required
 def student_dashboard():
     user = session.get("user", {})
@@ -536,7 +541,8 @@ def student_dashboard():
 
     student, summary = database.get_student_academic_summary(student_id)
     if not student:
-        flash("Student record could not be loaded.", "danger")
+        session.clear()
+        flash("Student profile record not found. Please log in again.", "danger")
         return redirect(url_for("home"))
 
     return render_template(

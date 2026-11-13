@@ -183,6 +183,39 @@ def init_db():
             ("admin", admin_hash, "Puma Controller", "admin")
         )
 
+    # Seed Default Departments if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM departments")
+    if cursor.fetchone()["cnt"] == 0:
+        cursor.execute("INSERT OR IGNORE INTO departments (id, name, code) VALUES (1, 'Department of Computer Science & Engineering', 'CSE')")
+        cursor.execute("INSERT OR IGNORE INTO departments (id, name, code) VALUES (2, 'Department of Information Technology', 'IT')")
+
+    # Seed Default Courses if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM courses")
+    if cursor.fetchone()["cnt"] == 0:
+        cursor.execute("INSERT OR IGNORE INTO courses (id, name, department_id, code, duration_years) VALUES (1, 'Master of Computer Applications (MCA)', 1, 'MCA', 2)")
+        cursor.execute("INSERT OR IGNORE INTO courses (id, name, department_id, code, duration_years) VALUES (2, 'B.Tech in Artificial Intelligence & Machine Learning', 1, 'BTECH-AIML', 4)")
+
+    # Seed Default Semesters if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM semesters")
+    if cursor.fetchone()["cnt"] == 0:
+        cursor.execute("INSERT OR IGNORE INTO semesters (id, name, course_id) VALUES (1, 'Semester 1', 1)")
+        cursor.execute("INSERT OR IGNORE INTO semesters (id, name, course_id) VALUES (2, 'Semester 2', 1)")
+        cursor.execute("INSERT OR IGNORE INTO semesters (id, name, course_id) VALUES (3, 'Semester 1', 2)")
+        cursor.execute("INSERT OR IGNORE INTO semesters (id, name, course_id) VALUES (4, 'Semester 2', 2)")
+
+    # Seed Default Students if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM students")
+    if cursor.fetchone()["cnt"] == 0:
+        stu_hash = generate_password_hash("student123")
+        cursor.execute("""
+            INSERT OR IGNORE INTO students (id, enrollment, name, course_id, semester_id, email, phone, password_hash, admission_year)
+            VALUES (1, '25COA4MCA0187', 'SUNITA', 1, 1, 'sunita@puma.edu', '+91 98765 43210', ?, 2025)
+        """, (stu_hash,))
+        cursor.execute("""
+            INSERT OR IGNORE INTO students (id, enrollment, name, course_id, semester_id, email, phone, password_hash, admission_year)
+            VALUES (2, '25COA2MCA0023', 'Nandini Wagh', 1, 2, 'nandini.wagh@puma.edu', '+91 98765 43211', ?, 2025)
+        """, (stu_hash,))
+
     # Seed Default Student password if missing
     cursor.execute("SELECT id, enrollment, password_hash FROM students")
     for stu in cursor.fetchall():
@@ -553,11 +586,14 @@ def get_student(student_id: int):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT stu.*, c.name as course_name, sem.name as semester_name, d.name as department_name
+        SELECT stu.*,
+               COALESCE(c.name, 'Master of Computer Applications (MCA)') as course_name,
+               COALESCE(sem.name, 'Semester 1') as semester_name,
+               COALESCE(d.name, 'Department of Computer Science & Engineering') as department_name
         FROM students stu
-        JOIN courses c ON stu.course_id = c.id
-        JOIN semesters sem ON stu.semester_id = sem.id
-        JOIN departments d ON c.department_id = d.id
+        LEFT JOIN courses c ON stu.course_id = c.id
+        LEFT JOIN semesters sem ON stu.semester_id = sem.id
+        LEFT JOIN departments d ON c.department_id = d.id
         WHERE stu.id = ?
     """, (student_id,))
     row = cursor.fetchone()
@@ -568,11 +604,14 @@ def get_student_by_enrollment(enrollment: str):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT stu.*, c.name as course_name, sem.name as semester_name, d.name as department_name
+        SELECT stu.*,
+               COALESCE(c.name, 'Master of Computer Applications (MCA)') as course_name,
+               COALESCE(sem.name, 'Semester 1') as semester_name,
+               COALESCE(d.name, 'Department of Computer Science & Engineering') as department_name
         FROM students stu
-        JOIN courses c ON stu.course_id = c.id
-        JOIN semesters sem ON stu.semester_id = sem.id
-        JOIN departments d ON c.department_id = d.id
+        LEFT JOIN courses c ON stu.course_id = c.id
+        LEFT JOIN semesters sem ON stu.semester_id = sem.id
+        LEFT JOIN departments d ON c.department_id = d.id
         WHERE UPPER(stu.enrollment) = ?
     """, (enrollment.strip().upper(),))
     row = cursor.fetchone()
@@ -697,11 +736,14 @@ def authenticate_user(username_or_enrollment: str, password: str, role: str):
 
     elif role == "student":
         cursor.execute("""
-            SELECT stu.*, c.name as course_name, sem.name as semester_name, d.name as department_name
+            SELECT stu.*,
+                   COALESCE(c.name, 'Master of Computer Applications (MCA)') as course_name,
+                   COALESCE(sem.name, 'Semester 1') as semester_name,
+                   COALESCE(d.name, 'Department of Computer Science & Engineering') as department_name
             FROM students stu
-            JOIN courses c ON stu.course_id = c.id
-            JOIN semesters sem ON stu.semester_id = sem.id
-            JOIN departments d ON c.department_id = d.id
+            LEFT JOIN courses c ON stu.course_id = c.id
+            LEFT JOIN semesters sem ON stu.semester_id = sem.id
+            LEFT JOIN departments d ON c.department_id = d.id
             WHERE UPPER(stu.enrollment) = UPPER(?) OR LOWER(stu.name) = LOWER(?)
         """, (username_or_enrollment.strip(), username_or_enrollment.strip()))
         student = cursor.fetchone()
