@@ -35,6 +35,9 @@ def add_no_cache_headers(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    response.headers["X-Test-PathInfo"] = str(request.environ.get("PATH_INFO", ""))
+    response.headers["X-Test-Matched"] = str(request.environ.get("HTTP_X_MATCHED_PATH", ""))
+    response.headers["X-Test-AllKeys"] = ",".join(k for k in request.environ.keys() if any(w in k.upper() for w in ("PATH", "URI", "URL", "ROUTE", "MATCH", "VERCEL", "ORIG", "FWD")))
     return response
 
 # Initialize database schema and migrations
