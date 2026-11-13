@@ -5,19 +5,47 @@ Provides robust schema management, connection pooling, and CRUD operations.
 
 import sqlite3
 import os
+import shutil
+import tempfile
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils.calculations import calculate_student_results
 
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "puma_university.db")
+# Detect serverless environment (Vercel, AWS Lambda, etc.)
+IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ORIGINAL_DB_PATH = os.path.join(ROOT_DIR, "puma_university.db")
+
+if IS_SERVERLESS:
+    DATABASE_PATH = os.path.join(tempfile.gettempdir(), "puma_university.db")
+    # Ensure database is copied to writable temp directory on serverless
+    if not os.path.exists(DATABASE_PATH) and os.path.exists(ORIGINAL_DB_PATH):
+        try:
+            shutil.copy2(ORIGINAL_DB_PATH, DATABASE_PATH)
+        except Exception as e:
+            print(f"Error copying DB to temp directory: {e}")
+else:
+    DATABASE_PATH = ORIGINAL_DB_PATH
 
 def get_db():
     """
     Returns a configured sqlite3 connection with Row factory and foreign keys enabled.
     """
+    if IS_SERVERLESS and not os.path.exists(DATABASE_PATH) and os.path.exists(ORIGINAL_DB_PATH):
+        try:
+            shutil.copy2(ORIGINAL_DB_PATH, DATABASE_PATH)
+        except Exception:
+            pass
+
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
-    conn.execute("PRAGMA journal_mode = WAL;")
+    try:
+        conn.execute("PRAGMA foreign_keys = ON;")
+    except Exception:
+        pass
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception:
+        pass
     return conn
 
 def init_db():
