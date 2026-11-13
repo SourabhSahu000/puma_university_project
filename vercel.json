@@ -3,6 +3,9 @@
   "functions": {
     "api/index.py": {
       "includeFiles": "puma_university.db"
+    },
+    "app.py": {
+      "includeFiles": "puma_university.db"
     }
   },
   "rewrites": [
