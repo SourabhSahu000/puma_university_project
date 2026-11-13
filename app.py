@@ -629,7 +629,7 @@ def generate_qr_api(enrollment):
     img = qr.make_image(fill_color="black", back_color="white")
 
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf, "PNG")
     buf.seek(0)
     return send_file(buf, mimetype="image/png")
 
