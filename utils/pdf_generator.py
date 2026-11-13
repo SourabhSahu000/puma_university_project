@@ -338,7 +338,7 @@ def generate_student_marksheet_pdf(student: dict, summary: dict, base_url: str =
     qr_img = qr.make_image(fill_color="black", back_color="white")
 
     qr_buffer = io.BytesIO()
-    qr_img.save(qr_buffer, format="PNG")
+    qr_img.save(qr_buffer, "PNG")
     qr_buffer.seek(0)
     qr_element = RLImage(qr_buffer, width=54, height=54)
 
