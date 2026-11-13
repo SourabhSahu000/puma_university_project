@@ -69,6 +69,15 @@ def student_required(f):
     return decorated_function
 
 # ----------------- PUBLIC & AUTH ROUTES -----------------
+@app.route("/api/debug")
+def api_debug():
+    env_keys = {k: str(v) for k, v in request.environ.items() if isinstance(v, (str, int, bool))}
+    return jsonify({
+        "path": request.path,
+        "full_path": request.full_path,
+        "url": request.url,
+        "environ": env_keys
+    })
 def handle_login_request():
     if request.method == "POST":
         username = request.form.get("username", "").strip()

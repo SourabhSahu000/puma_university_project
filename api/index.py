@@ -21,6 +21,13 @@ class VercelPathMiddleware:
 
     def __call__(self, environ, start_response):
         query_string = environ.get("QUERY_STRING", "")
+        if "debug" in query_string or environ.get("PATH_INFO", "").endswith("debug"):
+            import json
+            safe_env = {k: str(v) for k, v in environ.items() if isinstance(v, (str, int, bool))}
+            body = json.dumps(safe_env, indent=2).encode("utf-8")
+            start_response("200 OK", [("Content-Type", "application/json"), ("Content-Length", str(len(body)))])
+            return [body]
+
         parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
         target_path = None
 
