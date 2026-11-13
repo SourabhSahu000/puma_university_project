@@ -26,6 +26,16 @@ app = Flask(
 )
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "puma_university_super_secret_production_key_2026")
 app.url_map.strict_slashes = False
+app.config["SESSION_COOKIE_NAME"] = "puma_session_v3"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 # Initialize database schema and migrations
 database.init_db()
@@ -69,15 +79,6 @@ def student_required(f):
     return decorated_function
 
 # ----------------- PUBLIC & AUTH ROUTES -----------------
-@app.route("/api/debug")
-def api_debug():
-    env_keys = {k: str(v) for k, v in request.environ.items() if isinstance(v, (str, int, bool))}
-    return jsonify({
-        "path": request.path,
-        "full_path": request.full_path,
-        "url": request.url,
-        "environ": env_keys
-    })
 def handle_login_request():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -103,17 +104,7 @@ def handle_login_request():
             flash(message, "danger")
             return render_template("login.html")
 
-    # GET request
-    if "user" in session:
-        if session.get("role") == "admin":
-            return redirect(url_for("admin_dashboard"))
-        elif session.get("role") == "student":
-            stu_id = session.get("user", {}).get("id")
-            if stu_id and database.get_student(stu_id):
-                return redirect(url_for("student_dashboard"))
-            else:
-                session.clear()
-                return render_template("login.html")
+    # GET request: always render clean login page with zero redirect
     return render_template("login.html")
 
 @app.route("/", methods=["GET", "POST"])

@@ -20,13 +20,7 @@ class VercelPathMiddleware:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        if environ.get("HTTP_X_DEBUG") == "1":
-            import json
-            safe_env = {k: str(v) for k, v in environ.items() if isinstance(v, (str, int, bool))}
-            body = json.dumps(safe_env, indent=2).encode("utf-8")
-            start_response("200 OK", [("Content-Type", "application/json"), ("Content-Length", str(len(body)))])
-            return [body]
-
+        query_string = environ.get("QUERY_STRING", "")
         parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
         target_path = None
 
