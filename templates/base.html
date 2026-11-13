@@ -106,6 +106,7 @@
             </a>
         </div>
     </aside>
+    <div class="sidebar-overlay d-md-none" id="sidebarOverlay"></div>
     {% endif %}
 
     <!-- MAIN VIEW CONTAINER -->
@@ -125,7 +126,7 @@
 
             <div class="d-flex align-items-center gap-3">
                 <span class="badge bg-light text-dark border px-3 py-2 d-none d-sm-inline-block">
-                    <i class="fa-regular fa-calendar-check text-primary me-1"></i> Academic Session 2025-2026
+                    <i class="fa-regular fa-calendar-check text-primary me-1"></i> Academic Session {{ academic_session }}
                 </span>
                 <a href="/logout" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>

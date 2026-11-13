@@ -731,7 +731,8 @@ def get_dashboard_analytics():
     ledger = get_all_results_ledger()
     passed_count = sum(1 for item in ledger if item["summary"]["overall_status"] == "PASS")
     failed_count = sum(1 for item in ledger if item["summary"]["overall_status"] == "FAIL")
-    pass_percentage = round((passed_count / len(ledger) * 100), 1) if ledger else 0.0
+    evaluated_count = passed_count + failed_count
+    pass_percentage = round((passed_count / evaluated_count * 100), 1) if evaluated_count > 0 else 0.0
 
     sgpas = [item["summary"]["sgpa"] for item in ledger if item["summary"]["sgpa"] > 0]
     avg_sgpa = round(sum(sgpas) / len(sgpas), 2) if sgpas else 0.0

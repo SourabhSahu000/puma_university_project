@@ -3,12 +3,22 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Mobile Sidebar Toggle
+    // 1. Mobile Sidebar Toggle & Overlay
     const sidebarToggle = document.getElementById("sidebarToggle");
     const sidebar = document.querySelector(".sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener("click", () => {
             sidebar.classList.toggle("mobile-open");
+            if (sidebarOverlay) sidebarOverlay.classList.toggle("active");
+        });
+    }
+
+    if (sidebarOverlay && sidebar) {
+        sidebarOverlay.addEventListener("click", () => {
+            sidebar.classList.remove("mobile-open");
+            sidebarOverlay.classList.remove("active");
         });
     }
 
@@ -122,5 +132,25 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
-});
 
+    // 6. Dynamic Student -> Relevant Subjects Filter in Marks Entry
+    const markStudentSelect = document.getElementById("markStudentSelect");
+    const markSubjectSelect = document.getElementById("markSubjectSelect");
+    if (markStudentSelect && markSubjectSelect) {
+        const allSubjectOptions = Array.from(markSubjectSelect.options).slice(1);
+        markStudentSelect.addEventListener("change", () => {
+            const selectedOpt = markStudentSelect.options[markStudentSelect.selectedIndex];
+            const studentSemId = selectedOpt ? selectedOpt.getAttribute("data-semester") : null;
+
+            markSubjectSelect.innerHTML = '<option value="">Choose Subject</option>';
+            if (!studentSemId) {
+                allSubjectOptions.forEach(opt => markSubjectSelect.appendChild(opt.cloneNode(true)));
+                return;
+            }
+
+            const matching = allSubjectOptions.filter(opt => opt.getAttribute("data-semester") === studentSemId);
+            const toShow = matching.length > 0 ? matching : allSubjectOptions;
+            toShow.forEach(opt => markSubjectSelect.appendChild(opt.cloneNode(true)));
+        });
+    }
+});

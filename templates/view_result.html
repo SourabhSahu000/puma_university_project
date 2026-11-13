@@ -101,8 +101,10 @@
                         <td class="text-center">
                             {% if res.overall_status == 'PASS' %}
                                 <span class="badge-status-pass">PASS</span>
-                            {% else %}
+                            {% elif res.overall_status == 'FAIL' %}
                                 <span class="badge-status-fail">BACKLOG</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-2 py-1">PENDING</span>
                             {% endif %}
                         </td>
                         <td>

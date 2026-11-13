@@ -20,7 +20,9 @@
                             <select name="student_id" id="markStudentSelect" class="form-select" required>
                                 <option value="">Choose Student</option>
                                 {% for stu in students %}
-                                    <option value="{{ stu.id }}">{{ stu.name }} ({{ stu.enrollment }}) - {{ stu.course_name }}</option>
+                                    <option value="{{ stu.id }}" data-semester="{{ stu.semester_id }}" data-course="{{ stu.course_id }}">
+                                        {{ stu.name }} ({{ stu.enrollment }}) - {{ stu.course_name }} ({{ stu.semester_name }})
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -30,8 +32,8 @@
                             <select name="subject_id" id="markSubjectSelect" class="form-select" required>
                                 <option value="">Choose Subject</option>
                                 {% for sub in subjects %}
-                                    <option value="{{ sub.id }}" data-max="{{ sub.max_marks }}">
-                                        {{ sub.name }} [{{ sub.code or 'N/A' }}] (Max: {{ sub.max_marks }}, Credits: {{ sub.credits }})
+                                    <option value="{{ sub.id }}" data-semester="{{ sub.semester_id }}" data-max="{{ sub.max_marks }}">
+                                        {{ sub.name }} [{{ sub.code or 'N/A' }}] ({{ sub.course_name }} - {{ sub.semester_name }}, Credits: {{ sub.credits }})
                                     </option>
                                 {% endfor %}
                             </select>
@@ -156,7 +158,7 @@
     if (subSelect && marksInput && note) {
         subSelect.addEventListener('change', () => {
             const opt = subSelect.options[subSelect.selectedIndex];
-            const maxM = opt.getAttribute('data-max') || 100;
+            const maxM = (opt && opt.getAttribute('data-max')) ? opt.getAttribute('data-max') : 100;
             marksInput.max = maxM;
             note.textContent = `Max Marks: ${maxM}`;
         });

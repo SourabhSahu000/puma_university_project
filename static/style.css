@@ -290,6 +290,42 @@ h1, h2, h3, h4, h5, h6, .brand-font {
     box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
 }
 
+/* Responsive Mobile Layout */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: -100%;
+        width: 280px;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1050;
+    }
+    .sidebar.mobile-open {
+        left: 0;
+    }
+    .main-content {
+        width: 100%;
+    }
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1040;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
 /* Print Layout Optimization */
 @media print {
     body {

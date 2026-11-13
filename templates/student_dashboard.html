@@ -58,13 +58,13 @@
             <div class="stat-card">
                 <div>
                     <div class="text-muted small fw-semibold text-uppercase">Result Standing</div>
-                    <h4 class="fw-bold my-1 {% if summary.overall_status == 'PASS' %}text-success{% else %}text-danger{% endif %}">
+                    <h4 class="fw-bold my-1 {% if summary.overall_status == 'PASS' %}text-success{% elif summary.overall_status == 'FAIL' %}text-danger{% else %}text-secondary{% endif %}">
                         {{ summary.overall_status }}
                     </h4>
                     <div class="text-muted small">{{ summary.division }}</div>
                 </div>
-                <div class="stat-icon {% if summary.overall_status == 'PASS' %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}">
-                    <i class="fa-solid {% if summary.overall_status == 'PASS' %}fa-graduation-cap{% else %}fa-triangle-exclamation{% endif %}"></i>
+                <div class="stat-icon {% if summary.overall_status == 'PASS' %}bg-success bg-opacity-10 text-success{% elif summary.overall_status == 'FAIL' %}bg-danger bg-opacity-10 text-danger{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}">
+                    <i class="fa-solid {% if summary.overall_status == 'PASS' %}fa-graduation-cap{% elif summary.overall_status == 'FAIL' %}fa-triangle-exclamation{% else %}fa-clock{% endif %}"></i>
                 </div>
             </div>
         </div>

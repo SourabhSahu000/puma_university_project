@@ -23,6 +23,16 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "puma_university_super_secre
 # Initialize database schema and migrations
 database.init_db()
 
+@app.context_processor
+def inject_global_vars():
+    from datetime import datetime
+    now = datetime.now()
+    return {
+        "current_date": now.strftime("%B %d, %Y"),
+        "current_year": now.year,
+        "academic_session": f"{now.year - 1}-{now.year}" if now.month < 7 else f"{now.year}-{now.year + 1}"
+    }
+
 # ----------------- AUTHENTICATION HELPERS -----------------
 def login_required(f):
     @wraps(f)
@@ -419,6 +429,11 @@ def add_marks():
             m_val = int(marks)
             if m_val < 0:
                 flash("Marks cannot be negative.", "danger")
+                return redirect(url_for("marks_page"))
+
+            sub = database.get_subject(int(subject_id))
+            if sub and m_val > sub.get("max_marks", 100):
+                flash(f"Marks ({m_val}) cannot exceed maximum allowed marks ({sub['max_marks']}).", "danger")
                 return redirect(url_for("marks_page"))
 
             database.add_or_update_mark(int(student_id), int(subject_id), m_val)

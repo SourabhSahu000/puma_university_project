@@ -1,5 +1,6 @@
 import io
 import os
+from datetime import datetime
 import qrcode
 from PIL import Image as PILImage
 from reportlab.lib.pagesizes import A4
@@ -116,7 +117,8 @@ def generate_student_marksheet_pdf(student: dict, summary: dict, base_url: str =
     elements = []
 
     # 1. UNIVERSITY HEADER WITH LOGO
-    logo_path = os.path.join(os.getcwd(), "static", "logo.png")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logo_path = os.path.join(BASE_DIR, "static", "logo.png")
     logo_element = None
     if os.path.exists(logo_path):
         try:
@@ -154,6 +156,7 @@ def generate_student_marksheet_pdf(student: dict, summary: dict, base_url: str =
     sem_name = str(student.get("semester_name") or "Semester 1")
     exam_session = str(student.get("session") or "Academic Session 2025-2026")
     serial_no = f"PU/RES/{int(student.get('id') or 1):04d}/{enrollment}"
+    current_date = datetime.now().strftime("%B %d, %Y")
 
     student_info_data = [
         [
@@ -178,7 +181,7 @@ def generate_student_marksheet_pdf(student: dict, summary: dict, base_url: str =
             Paragraph("<b>Serial Number:</b>", info_label_style),
             Paragraph(serial_no, info_val_style),
             Paragraph("<b>Issue Date:</b>", info_label_style),
-            Paragraph("November 12, 2026", info_val_style),
+            Paragraph(current_date, info_val_style),
         ]
     ]
 
@@ -342,7 +345,7 @@ def generate_student_marksheet_pdf(student: dict, summary: dict, base_url: str =
     footer_left = [
         qr_element,
         Spacer(1, 2),
-        Paragraph("<font size='6.5' color='#64748b'>Scan to Verify Result Online</font>", TA_CENTER and subtitle_style)
+        Paragraph("<font size='6.5' color='#64748b'>Scan to Verify Result Online</font>", subtitle_style)
     ]
 
     footer_middle = [
