@@ -1,5 +1,6 @@
 import sys
 import os
+import urllib.parse
 
 # Add root directory to sys.path so app, database, and utils can be imported
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,25 +12,56 @@ from app import app
 class VercelPathMiddleware:
     """
     Normalizes PATH_INFO for Vercel Serverless environment.
-    When Vercel uses rewrites, the original user-requested path is passed in
-    HTTP_X_MATCHED_PATH (e.g. '/', '/login', '/admin') while PATH_INFO is
-    rewritten to '/api/index'. This middleware restores PATH_INFO so Flask
-    matches the exact user-requested route.
+    Vercel rewrites incoming requests to /api/index?__vercel_path=$1.
+    This middleware restores the original PATH_INFO and cleans QUERY_STRING
+    so Flask routes match perfectly across all GET, POST, and dynamic paths.
     """
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        matched_path = environ.get("HTTP_X_MATCHED_PATH")
-        path_info = environ.get("PATH_INFO", "")
+        query_string = environ.get("QUERY_STRING", "")
+        parsed = urllib.parse.parse_qs(query_string, keep_blank_values=True)
+        target_path = None
 
-        if matched_path and not matched_path.startswith("/api/index"):
-            environ["PATH_INFO"] = matched_path
-        elif path_info in ("/api/index", "/api/index/"):
-            environ["PATH_INFO"] = "/"
-        elif path_info.startswith("/api/index/"):
-            sub_path = path_info[len("/api/index"):]
-            environ["PATH_INFO"] = sub_path if sub_path else "/"
+        # 1. Check if __vercel_path was captured by vercel.json rewrite
+        if "__vercel_path" in parsed:
+            raw_path = parsed.pop("__vercel_path")[0] if parsed.get("__vercel_path") else ""
+            if raw_path:
+                target_path = raw_path if raw_path.startswith("/") else "/" + raw_path
+            else:
+                target_path = "/"
+            # Clean internal param from query string
+            filtered = [(k, v) for k, vs in parsed.items() for v in vs]
+            environ["QUERY_STRING"] = urllib.parse.urlencode(filtered)
+
+        # 2. Check standard proxy headers if __vercel_path is not present
+        if not target_path:
+            for hdr in ("HTTP_X_FORWARDED_URI", "HTTP_X_ORIGINAL_URI", "REQUEST_URI"):
+                val = environ.get(hdr)
+                if val:
+                    target_path = urllib.parse.urlparse(val).path
+                    break
+
+        # 3. Check HTTP_X_MATCHED_PATH (only if not literal /api/index)
+        if not target_path:
+            matched_path = environ.get("HTTP_X_MATCHED_PATH")
+            if matched_path and not matched_path.startswith("/api/index"):
+                target_path = matched_path
+
+        # 4. Fallback to existing PATH_INFO
+        if not target_path:
+            path_info = environ.get("PATH_INFO", "")
+            if path_info in ("/api/index", "/api/index/", ""):
+                target_path = "/"
+            elif path_info.startswith("/api/index/"):
+                sub = path_info[len("/api/index"):]
+                target_path = sub if sub else "/"
+            else:
+                target_path = path_info
+
+        if target_path:
+            environ["PATH_INFO"] = target_path
 
         return self.wsgi_app(environ, start_response)
 

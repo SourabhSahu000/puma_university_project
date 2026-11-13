@@ -25,6 +25,7 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "static")
 )
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "puma_university_super_secret_production_key_2026")
+app.url_map.strict_slashes = False
 
 # Initialize database schema and migrations
 database.init_db()
@@ -68,10 +69,32 @@ def student_required(f):
     return decorated_function
 
 # ----------------- PUBLIC & AUTH ROUTES -----------------
-@app.route("/")
-@app.route("/api/index")
-@app.route("/api/index/")
-def home():
+def handle_login_request():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        role = request.form.get("role", "admin").strip().lower()
+
+        if not username or not password:
+            flash("Username / Enrollment and Password are required.", "danger")
+            return render_template("login.html")
+
+        success, user, message = database.authenticate_user(username, password, role)
+
+        if success:
+            session["user"] = user
+            session["role"] = role
+            session["user_name"] = user.get("name", username)
+            flash(f"Welcome back, {session['user_name']}!", "success")
+            if role == "admin":
+                return redirect(url_for("admin_dashboard"))
+            else:
+                return redirect(url_for("student_dashboard"))
+        else:
+            flash(message, "danger")
+            return render_template("login.html")
+
+    # GET request
     if "user" in session:
         if session.get("role") == "admin":
             return redirect(url_for("admin_dashboard"))
@@ -79,33 +102,15 @@ def home():
             return redirect(url_for("student_dashboard"))
     return render_template("login.html")
 
+@app.route("/", methods=["GET", "POST"])
+@app.route("/api/index", methods=["GET", "POST"])
+@app.route("/api/index/", methods=["GET", "POST"])
+def home():
+    return handle_login_request()
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "GET":
-        return home()
-
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "").strip()
-    role = request.form.get("role", "admin").strip().lower()
-
-    if not username or not password:
-        flash("Username / Enrollment and Password are required.", "danger")
-        return redirect(url_for("home"))
-
-    success, user, message = database.authenticate_user(username, password, role)
-
-    if success:
-        session["user"] = user
-        session["role"] = role
-        session["user_name"] = user.get("name", username)
-        flash(f"Welcome back, {session['user_name']}!", "success")
-        if role == "admin":
-            return redirect(url_for("admin_dashboard"))
-        else:
-            return redirect(url_for("student_dashboard"))
-    else:
-        flash(message, "danger")
-        return redirect(url_for("home"))
+    return handle_login_request()
 
 @app.route("/logout")
 def logout():
@@ -522,6 +527,8 @@ def export_results_csv():
 
 # ----------------- STUDENT PORTAL -----------------
 @app.route("/student")
+@app.route("/student/dashboard")
+@app.route("/student/result")
 @student_required
 def student_dashboard():
     user = session.get("user", {})
@@ -539,9 +546,22 @@ def student_dashboard():
     )
 
 # ----------------- MARKSHEET & VERIFICATION -----------------
-@app.route("/marksheet/<int:student_id>")
-def marksheet_pdf(student_id):
-    student, summary = database.get_student_academic_summary(student_id)
+def _resolve_student_record(identifier):
+    student = None
+    if str(identifier).isdigit():
+        student = database.get_student(int(identifier))
+    if not student:
+        student = database.get_student_by_enrollment(str(identifier))
+    return student
+
+@app.route("/marksheet/<identifier>")
+@app.route("/marksheet/<identifier>/pdf")
+def marksheet_pdf(identifier):
+    stu = _resolve_student_record(identifier)
+    if not stu:
+        return "Student Not Found", 404
+
+    student, summary = database.get_student_academic_summary(stu["id"])
     if not student:
         return "Student Not Found", 404
 
@@ -556,9 +576,14 @@ def marksheet_pdf(student_id):
         download_name=file_name
     )
 
-@app.route("/marksheet/preview/<int:student_id>")
-def marksheet_preview(student_id):
-    student, summary = database.get_student_academic_summary(student_id)
+@app.route("/marksheet/preview/<identifier>")
+def marksheet_preview(identifier):
+    stu = _resolve_student_record(identifier)
+    if not stu:
+        flash("Student record not found.", "danger")
+        return redirect(url_for("home"))
+
+    student, summary = database.get_student_academic_summary(stu["id"])
     if not student:
         flash("Student record not found.", "danger")
         return redirect(url_for("home"))
