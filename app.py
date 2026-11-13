@@ -69,6 +69,8 @@ def student_required(f):
 
 # ----------------- PUBLIC & AUTH ROUTES -----------------
 @app.route("/")
+@app.route("/api/index")
+@app.route("/api/index/")
 def home():
     if "user" in session:
         if session.get("role") == "admin":
@@ -77,8 +79,11 @@ def home():
             return redirect(url_for("student_dashboard"))
     return render_template("login.html")
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "GET":
+        return home()
+
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "").strip()
     role = request.form.get("role", "admin").strip().lower()
@@ -630,10 +635,16 @@ def api_students():
 def api_analytics():
     return jsonify(database.get_dashboard_analytics())
 
+from flask import send_from_directory
+
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
 # ----------------- ERROR HANDLERS -----------------
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template("verify_result.html", student=None, summary=None, requested_enrollment="404-NOT-FOUND"), 404
+    return render_template("404.html"), 404
 
 @app.errorhandler(500)
 def server_error(e):
